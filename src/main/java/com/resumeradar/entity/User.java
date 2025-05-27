@@ -10,6 +10,8 @@ import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -40,6 +42,7 @@ public class User implements UserDetails {
 	@Column(unique = true, nullable = false)
     private String email;
 
+	@JsonIgnore
     private String password;
 
     @Enumerated(EnumType.STRING)
@@ -53,6 +56,7 @@ public class User implements UserDetails {
     @OneToOne(mappedBy = "user")
     private Resume resumes;
 
+    @JsonIgnore
     @OneToMany(mappedBy = "recruiter")
     private List<Job> postedJobs;
     
@@ -65,14 +69,44 @@ public class User implements UserDetails {
 	}
 
 	@Override
+	@JsonIgnore
 	public Collection<? extends GrantedAuthority> getAuthorities() {
 		return Collections.singletonList(new SimpleGrantedAuthority(this.role.name()));
 	}
 
 	@Override
+	@JsonIgnore
 	public String getUsername() {
 		// TODO Auto-generated method stub
 		return null;
+	}
+
+	@JsonIgnore
+	@Override
+	public boolean isAccountNonExpired() {
+		// TODO Auto-generated method stub
+		return UserDetails.super.isAccountNonExpired();
+	}
+
+	@JsonIgnore
+	@Override
+	public boolean isAccountNonLocked() {
+		// TODO Auto-generated method stub
+		return UserDetails.super.isAccountNonLocked();
+	}
+
+	@JsonIgnore
+	@Override
+	public boolean isCredentialsNonExpired() {
+		// TODO Auto-generated method stub
+		return UserDetails.super.isCredentialsNonExpired();
+	}
+
+	@JsonIgnore
+	@Override
+	public boolean isEnabled() {
+		// TODO Auto-generated method stub
+		return UserDetails.super.isEnabled();
 	}
 }
 

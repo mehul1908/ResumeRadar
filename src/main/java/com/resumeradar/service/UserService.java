@@ -1,5 +1,6 @@
 package com.resumeradar.service;
 
+import java.util.List;
 import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -8,6 +9,7 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 
+import com.resumeradar.entity.Role;
 import com.resumeradar.entity.User;
 import com.resumeradar.model.LoginModel;
 import com.resumeradar.model.RegisterModel;
@@ -49,9 +51,32 @@ public class UserService implements UserDetailsService{
 			uRepo.save(user);
 			return user;
 		}catch(Exception e) {
+			e.printStackTrace();
 			return null;
 		}
 	}
+
+	public List<User> getUserByRole(String role) {
+		// TODO Auto-generated method stub
+		try {
+			return uRepo.findByRole(Role.valueOf(role));
+		}catch(Exception e) {
+			e.printStackTrace();
+			return null;
+		}
+	}
+
+	public User updatePassword(User user, String encodedPass) {
+		try {
+			user.setPassword(encodedPass);
+			uRepo.save(user);
+			return user;
+		}catch(Exception e) {
+			e.printStackTrace();
+			return null;
+		}
+	}
+
 
 	
 

@@ -29,13 +29,12 @@ public class JWTFilter extends OncePerRequestFilter
 	@Override
 	protected boolean shouldNotFilter(HttpServletRequest request) throws ServletException 
 	{
-//		String url = request.getRequestURI();
-//		System.out.println(url);
-//		return url.contains("/auth") || 
-//				url.contains("/swagger-ui") ||
-//				url.contains("/v3/api-docs") || 
-//				url.contains("/apidocs.html");
-		return true;
+		String url = request.getRequestURI();
+		System.out.println(url);
+		return url.contains("/auth") || 
+				url.contains("/swagger-ui") ||
+				url.contains("/v3/api-docs") || 
+				url.contains("/apidocs.html");
 	}
 	
 	@Override
@@ -65,9 +64,10 @@ public class JWTFilter extends OncePerRequestFilter
             if(op.isPresent())
             {
             	User user = op.get();
-	            UsernamePasswordAuthenticationToken authToken =
-	                    new UsernamePasswordAuthenticationToken(user, null, user.getAuthorities());
-	            SecurityContextHolder.getContext().setAuthentication(authToken);
+            	UsernamePasswordAuthenticationToken authToken =
+            		    new UsernamePasswordAuthenticationToken(user, null, user.getAuthorities());
+            		SecurityContextHolder.getContext().setAuthentication(authToken);
+
 	            filterChain.doFilter(request, response);
             }else {
             	response.setStatus(403);

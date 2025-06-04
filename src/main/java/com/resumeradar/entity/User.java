@@ -78,7 +78,7 @@ public class User implements UserDetails {
 	@JsonIgnore
 	public String getUsername() {
 		// TODO Auto-generated method stub
-		return null;
+		return this.userId;
 	}
 
 	@JsonIgnore

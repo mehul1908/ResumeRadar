@@ -4,6 +4,8 @@ import java.time.LocalDateTime;
 
 import org.hibernate.annotations.UpdateTimestamp;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -25,9 +27,8 @@ public class Resume {
     @GeneratedValue(strategy = GenerationType.UUID)
     private String resumeId;
 
-    @Lob
-    private String extractedText;
-
+    private String resumePath;
+    
     @Lob
     private String skills;
 
@@ -35,12 +36,13 @@ public class Resume {
     private LocalDateTime uploadedAt;
 
     @OneToOne
+    @JsonIgnore
     @JoinColumn(name = "user_id")
     private User user;
 
-	public Resume(String extractedText, String skills, User user) {
+	public Resume(String resumePath , String skills, User user) {
 		super();
-		this.extractedText = extractedText;
+		this.resumePath = resumePath;
 		this.skills = skills;
 		this.user = user;
 	}

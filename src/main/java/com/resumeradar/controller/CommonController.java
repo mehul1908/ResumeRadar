@@ -3,6 +3,7 @@ package com.resumeradar.controller;
 import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -17,6 +18,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import com.resumeradar.entity.User;
 import com.resumeradar.model.ApiResponse;
 import com.resumeradar.model.PasswordUpdateRequest;
+import com.resumeradar.model.UpdateUserModel;
 import com.resumeradar.service.UserService;
 
 import jakarta.validation.Valid;
@@ -58,6 +60,26 @@ public class CommonController {
 		return ResponseEntity.ok(new ApiResponse(false , null , "Password Cann't beUpdated"));
 		
 	}
+	
+	@GetMapping("/deactivate")
+	public ResponseEntity<ApiResponse>  deactivateYourself(){
+		Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+		if (auth != null && auth.getPrincipal() instanceof User user) {
+			User updatedUser = userService.deactivate(user);
+			return ResponseEntity.ok(new ApiResponse(true , updatedUser , "User deactivated"));
+		}
+		else {
+			return ResponseEntity.status(HttpStatus.FORBIDDEN).body(new ApiResponse(false, null, "Login Again"));
+		}
+	}
+	
+	@PostMapping("/updateUser")
+	public ResponseEntity<ApiResponse> updateUser(@RequestBody UpdateUserModel model) {
+		
+		User user = userService.updateUser(model);
+		
+	}
+	
 	
 	
 }

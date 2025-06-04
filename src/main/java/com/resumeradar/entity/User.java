@@ -60,12 +60,19 @@ public class User implements UserDetails {
     @OneToMany(mappedBy = "recruiter")
     private List<Job> postedJobs;
     
-    public User(String name, String email, String password, String role) {
+    private String education;
+    
+    @Column(length = 13)
+    private String phone;
+    
+    public User(String name, String email, String password, String role , String education , String phone) {
 		super();
 		this.name = name;
 		this.email = email;
 		this.password = password; 
 		this.role = Role.valueOf(role);
+		this.education = education;
+		this.phone = phone;
 	}
 
 	@Override

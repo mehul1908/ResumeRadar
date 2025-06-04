@@ -11,20 +11,25 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class RegisterModel {
 	
-	@NotBlank(message = "Email id cann't be blank")
+	@NotBlank(message = "Email id can not be blank")
 	private String emailId;
 	
-	@NotBlank(message = "Password Cann't be blank")
+	@NotBlank(message = "Password Can not be blank")
 	@Pattern(
 		    regexp = "^(?=.*[0-9])(?=.*[a-z])(?=.*[A-Z])(?=.*[@#$%^&+=!]).{8,}$",
 		    message = "Password must be at least 8 characters and include a digit, lowercase, uppercase, and special character"
 		)
 	private String password;
 	
-	@NotBlank(message = "Role cann't be blank")
+	@NotBlank(message = "Role can not be blank")
 	private String role;
 	
-	@NotBlank(message = "Name cann't be blank")
+	@NotBlank(message = "Name can not be blank")
 	private String name;
+	
+	private String education;
+	
+	@NotBlank(message = "Phone Number can not be blanked")
+	private String phone;
 	
 }

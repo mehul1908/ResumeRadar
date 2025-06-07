@@ -8,12 +8,12 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
 import com.resumeradar.entity.User;
 import com.resumeradar.model.ApiResponse;
@@ -23,7 +23,7 @@ import com.resumeradar.service.UserService;
 
 import jakarta.validation.Valid;
 
-@Controller
+@RestController
 @RequestMapping("/user")
 public class CommonController {
 	
@@ -42,7 +42,7 @@ public class CommonController {
 		return ResponseEntity.ok(new ApiResponse(false, op.get(), "User not found"));
 	}
 	
-	@PostMapping("/updatePassword")
+	@PostMapping("/updatepassword")
 	public ResponseEntity<ApiResponse> updatePassword( @Valid @RequestBody PasswordUpdateRequest model ){
 		
 		Authentication auth = SecurityContextHolder.getContext().getAuthentication();
@@ -75,8 +75,11 @@ public class CommonController {
 	
 	@PostMapping("/updateUser")
 	public ResponseEntity<ApiResponse> updateUser(@RequestBody UpdateUserModel model) {
-		
 		User user = userService.updateUser(model);
+		if(user!=null) {
+			return ResponseEntity.ok(new ApiResponse(true, user, "User is updated successfully!!"));
+		}
+		return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(new ApiResponse(false, null, "User is updated!!"));
 		
 	}
 	

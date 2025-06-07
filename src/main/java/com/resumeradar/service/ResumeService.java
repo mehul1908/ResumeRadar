@@ -20,6 +20,7 @@ import org.springframework.web.multipart.MultipartFile;
 import com.resumeradar.entity.Resume;
 import com.resumeradar.entity.User;
 import com.resumeradar.repo.ResumeRepo;
+import com.resumeradar.repo.UserRepo;
 import com.resumeradar.utils.SkillSet;
 
 @Service
@@ -27,6 +28,10 @@ public class ResumeService {
 
 	@Autowired
 	private ResumeRepo resRepo;
+	
+	@Autowired
+	private UserRepo userRepo;
+	
 	
 	private static final LevenshteinDistance distance = LevenshteinDistance.getDefaultInstance();
 
@@ -82,14 +87,17 @@ public class ResumeService {
 			if (auth != null && auth.getPrincipal() instanceof User user) {
 				String skills =String.join(", ", matchSkills(extractText(file)));
 				Resume res;
-				if (user.getResumes() == null)
+				if (user.getResumes() == null) {
 					res = new Resume(resumePath, skills, user);
+					user.setResumes(res);
+				}
 				else {
 					res = user.getResumes();
 					res.setResumePath(resumePath);
 					res.setSkills(skills);
 				}
 				resRepo.save(res);
+				userRepo.save(user);
 				return res;
 			}
 			return null;

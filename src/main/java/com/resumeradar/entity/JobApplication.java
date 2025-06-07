@@ -13,18 +13,24 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
+import jakarta.persistence.UniqueConstraint;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
 @Entity
-@Table(name = "job_applications")
+@Table(
+	    name = "job_applications",
+	    uniqueConstraints = {
+	        @UniqueConstraint(columnNames = {"seeker_id", "job_id"})
+	    }
+	)
 @Data
 @NoArgsConstructor
 public class JobApplication {
 
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
-    private String applicationId;
+    private String applicationId;	
 
     @ManyToOne
     @JoinColumn(name = "job_id")
@@ -39,16 +45,16 @@ public class JobApplication {
     private Resume resume;
 
     @Enumerated(EnumType.STRING)
-    private ApplicationStatus status = ApplicationStatus.PENDING;
+    private ApplicationStatus status;
 
     @CreationTimestamp
     private LocalDateTime appliedAt;
 
-	public JobApplication(Job job, User seeker, Resume resume, ApplicationStatus status) {
+	public JobApplication(Job job, User seeker, Resume resume) {
 		super();
 		this.job = job;
 		this.seeker = seeker;
 		this.resume = resume;
-		this.status = status;
+		this.status = ApplicationStatus.PENDING;
 	}
 }

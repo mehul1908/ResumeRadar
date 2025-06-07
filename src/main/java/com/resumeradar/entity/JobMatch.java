@@ -1,6 +1,5 @@
 package com.resumeradar.entity;
 
-import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 import org.hibernate.annotations.CreationTimestamp;
@@ -12,11 +11,17 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
+import jakarta.persistence.UniqueConstraint;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
 @Entity
-@Table(name = "job_matches")
+@Table(
+	    name = "job_matches",
+	    uniqueConstraints = {
+	    		@UniqueConstraint(columnNames = {"seeker_id", "job_id"})
+	    }
+	)
 @Data
 @NoArgsConstructor
 public class JobMatch {
@@ -33,12 +38,12 @@ public class JobMatch {
     @JoinColumn(name = "job_id")
     private Job job;
 
-    private BigDecimal matchScore;
+    private Double matchScore;
 
     @CreationTimestamp
     private LocalDateTime matchedOn;
 
-	public JobMatch(User seeker, Job job, BigDecimal matchScore) {
+	public JobMatch(User seeker, Job job, Double matchScore) {
 		super();
 		this.seeker = seeker;
 		this.job = job;

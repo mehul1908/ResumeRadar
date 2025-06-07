@@ -135,6 +135,20 @@ public class UserService implements UserDetailsService{
 		return null;
 	}
 
+	public User activate(User user) {
+		user.setIsActive(true);
+		uRepo.save(user);
+		return user;
+	}
+
+	public List<User> findByIsActive(boolean b) {
+		return uRepo.findByIsActive(b);
+	}
+
+	public List<User> findByIsActiveAndRole(boolean b, Role role) {
+		return uRepo.findByIsActiveAndRole(b , role);
+	}
+
 	
 
 

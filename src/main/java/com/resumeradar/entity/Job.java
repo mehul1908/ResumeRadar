@@ -44,13 +44,15 @@ public class Job {
 
     private Boolean isActive = true;
 
+    private String company;
+    
     @ManyToOne
     @JoinColumn(name = "recruiter_id")
     @JsonIgnore
     private User recruiter;
 
 	public Job(String title, String description, String requiredSkills, String location, String salaryRange,
-			User recruiter) {
+			User recruiter , String company) {
 		super();
 		this.title = title;
 		this.description = description;
@@ -58,6 +60,7 @@ public class Job {
 		this.location = location;
 		this.salaryRange = salaryRange;
 		this.recruiter = recruiter;
+		this.company = company;
 	}
 }
 

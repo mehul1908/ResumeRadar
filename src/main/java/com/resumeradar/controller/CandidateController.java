@@ -31,6 +31,8 @@ import com.resumeradar.model.ApiResponse;
 import com.resumeradar.service.JobService;
 import com.resumeradar.service.ResumeService;
 
+import jakarta.mail.MessagingException;
+
 
 @RestController
 @RequestMapping("/candidate")
@@ -75,7 +77,13 @@ public class CandidateController {
 	
 	@GetMapping("/apply/job/{jobId}")
 	public ResponseEntity<ApiResponse> applyJob(@PathVariable String jobId){
-		JobApplication jobApp = jobService.applyJob(jobId);
+		JobApplication jobApp=null;
+		try {
+			jobApp = jobService.applyJob(jobId);
+		} catch (MessagingException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 		if(jobApp!=null) {
 			return ResponseEntity.ok(new ApiResponse(true, jobApp, "Your Application is successfully added"));
 		}

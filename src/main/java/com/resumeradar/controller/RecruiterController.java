@@ -20,6 +20,7 @@ import com.resumeradar.model.ApiResponse;
 import com.resumeradar.model.JobRegModel;
 import com.resumeradar.service.JobService;
 
+import jakarta.mail.MessagingException;
 import jakarta.validation.Valid;
 
 @RestController
@@ -40,7 +41,7 @@ public class RecruiterController {
 	
 	
 	@PostMapping("/process/job/{applicantId}")
-	public ResponseEntity<ApiResponse> processApplication(@PathVariable String applicantId , @RequestBody ApplicationStatus appStatus ){
+	public ResponseEntity<ApiResponse> processApplication(@PathVariable String applicantId , @RequestBody ApplicationStatus appStatus ) throws MessagingException{
 		JobApplication jobApp = jobService.getJobAppById(applicantId);
 		
 		if(jobApp!=null) {

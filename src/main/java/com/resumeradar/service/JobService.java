@@ -2,11 +2,15 @@ package com.resumeradar.service;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import org.hibernate.LazyInitializationException;
+
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
@@ -21,6 +25,9 @@ import com.resumeradar.model.JobRegModel;
 import com.resumeradar.repo.JobAppRepo;
 import com.resumeradar.repo.JobMatchRepo;
 import com.resumeradar.repo.JobRepo;
+import com.resumeradar.utils.EmailMessage;
+
+import jakarta.mail.MessagingException;
 
 @Service
 public class JobService {
@@ -37,10 +44,13 @@ public class JobService {
 	@Autowired
 	private UserService userService;
 	
-	public Job addJob(JobRegModel model) {
+	@Autowired
+	private EmailMessage emailMessage;
+	
+	public Job addJob(JobRegModel model) throws NullPointerException , DataIntegrityViolationException , IllegalArgumentException , LazyInitializationException {
 		Authentication auth = SecurityContextHolder.getContext().getAuthentication();
 		if (auth != null && auth.getPrincipal() instanceof User user) {
-			Job job = new Job(model.getTitle(), model.getDescription(), model.getSkill(), model.getLocation(), model.getSalaryRange(), user);
+			Job job = new Job(model.getTitle(), model.getDescription(), model.getSkill(), model.getLocation(), model.getSalaryRange(), user , model.getCompany());
 			jobRepo.save(job);
 			match(job);
 			return job;
@@ -49,28 +59,25 @@ public class JobService {
 	}
 
 
-	public Job getJobById(String jobId) {
+	public Job getJobById(String jobId) throws NoSuchElementException {
 		Optional<Job> job = jobRepo.findById(jobId);
 		if(job.isPresent())
 			return job.get();
 		return null;
 	}
 	
-	public JobApplication applyJob(String jobId) {
-		try {
+	public JobApplication applyJob(String jobId) throws MessagingException {
 		Authentication auth = SecurityContextHolder.getContext().getAuthentication();
 		if (auth != null && auth.getPrincipal() instanceof User user) {
 			Job job = getJobById(jobId);
 			if(job!=null) {
 				JobApplication jobApp = new JobApplication(job, user, user.getResumes());
 				jobAppRepo.save(jobApp);
+				emailMessage.sendJobApplicationConfirmation(user.getEmail(), user.getName(), job.getTitle(), job.getCompany());
 				return jobApp;
 			}
 		}
 		return null;
-		}catch(Exception e) {
-			throw e;
-		}
 	}
 
 	public void match(User user) {
@@ -146,13 +153,12 @@ public class JobService {
 	}
 
 
-	public void updateJobApp(JobApplication jobApp, ApplicationStatus appStatus) {
-		try {
+	public void updateJobApp(JobApplication jobApp, ApplicationStatus appStatus) throws MessagingException {
+		
 			jobApp.setStatus(appStatus);
 			jobAppRepo.save(jobApp);
-		}catch(Exception ex){
-			throw ex;
-		}
+			emailMessage.sendJobInProcessNotification(jobApp.getSeeker().getEmail(), jobApp.getSeeker().getName(), jobApp.getJob().getTitle(), jobApp.getJob().getCompany());
+		
 		
 	}
 

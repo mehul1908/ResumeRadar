@@ -25,4 +25,7 @@ public class JobRegModel {
 	@NotBlank(message="Salary ranged can not be blanked")
 	private String salaryRange;
 	
+	@NotBlank(message="Company Name can not be blanked")
+	private String company;
+	
 }

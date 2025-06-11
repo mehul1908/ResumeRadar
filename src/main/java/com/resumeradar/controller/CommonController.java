@@ -20,7 +20,10 @@ import com.resumeradar.model.ApiResponse;
 import com.resumeradar.model.PasswordUpdateRequest;
 import com.resumeradar.model.UpdateUserModel;
 import com.resumeradar.service.UserService;
+import com.resumeradar.utils.EmailMessage;
+import com.resumeradar.utils.RandomPasswordGenerator;
 
+import jakarta.mail.MessagingException;
 import jakarta.validation.Valid;
 
 @RestController
@@ -32,6 +35,9 @@ public class CommonController {
 	
 	@Autowired
 	private PasswordEncoder passEncoder;
+	
+	@Autowired
+	private EmailMessage emailMessage;
 	
 	@GetMapping("/get/{userId}")
 	public ResponseEntity<ApiResponse> getUserById(@PathVariable String userId){
@@ -81,6 +87,23 @@ public class CommonController {
 		}
 		return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(new ApiResponse(false, null, "User is updated!!"));
 		
+	}
+	
+	@GetMapping("/forgetpassword")
+	public ResponseEntity<ApiResponse> forgetPassword(){
+		String rawPassword = RandomPasswordGenerator.generateStrongPassword();
+		String randomPassword = passEncoder.encode(rawPassword);
+		User user = userService.forgetPassword(randomPassword);
+		if(user!=null) {
+			try {
+				emailMessage.sendPasswordResetEmail(user.getEmail(), user.getName(), rawPassword);
+			} catch (MessagingException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+			return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
+		}
+		return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(new ApiResponse(false, user, "User not authorized."));
 	}
 	
 	

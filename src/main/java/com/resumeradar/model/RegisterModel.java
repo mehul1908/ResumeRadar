@@ -1,5 +1,7 @@
 package com.resumeradar.model;
 
+import com.resumeradar.entity.Role;
+
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
 import lombok.AllArgsConstructor;
@@ -22,7 +24,7 @@ public class RegisterModel {
 	private String password;
 	
 	@NotBlank(message = "Role can not be blank")
-	private String role;
+	private Role role;
 	
 	@NotBlank(message = "Name can not be blank")
 	private String name;
@@ -31,5 +33,5 @@ public class RegisterModel {
 	
 	@NotBlank(message = "Phone Number can not be blanked")
 	private String phone;
-	
+		
 }

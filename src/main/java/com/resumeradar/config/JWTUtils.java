@@ -30,22 +30,13 @@ public class JWTUtils
 		 Date createDate = new Date(System.currentTimeMillis());
 		 Date expireDate = new Date(System.currentTimeMillis() + 1000*60*100);
 		 
-//	        return Jwts.builder()
-//	                .setClaims(claims)
-//	                .setSubject(subject)
-//	                .setIssuedAt(createDate)
-//	                .setExpiration(expireDate) // 10 minute validity
-//	                .signWith(SignatureAlgorithm.HS256, SECRET_KEY)
-//	                .compact();
-
-		 
 		 SecretKey key = Keys.hmacShaKeyFor(SECRET_KEY.getBytes(StandardCharsets.UTF_8));
 		 
 	        return Jwts.builder()
 	                .setClaims(claims)
 	                .setSubject(subject)
 	                .setIssuedAt(createDate)
-	                .setExpiration(expireDate) // 10 minute validity
+	                .setExpiration(expireDate) // 100 minute validity
 	                .signWith(key)
 	                .compact();
 	 }

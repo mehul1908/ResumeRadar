@@ -54,23 +54,23 @@ public class User implements UserDetails {
     private LocalDateTime createdAt;
 
     @OneToOne(mappedBy = "user")
-    private Resume resumes;
+    private Resume resumes; // only for job seeker
 
     @JsonIgnore
     @OneToMany(mappedBy = "recruiter")
     private List<Job> postedJobs;
     
-    private String education;
+    private String education; // only for job seeker
     
     @Column(length = 13)
     private String phone;
     
-    public User(String name, String email, String password, String role , String education , String phone) {
+    public User(String name, String email, String password, Role role , String education , String phone) {
 		super();
 		this.name = name;
 		this.email = email;
 		this.password = password; 
-		this.role = Role.valueOf(role);
+		this.role = role;
 		this.education = education;
 		this.phone = phone;
 	}

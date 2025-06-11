@@ -1,7 +1,5 @@
 package com.resumeradar.controller;
 
-import java.io.IOException;
-
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -33,71 +31,63 @@ import com.resumeradar.service.ResumeService;
 
 import jakarta.mail.MessagingException;
 
-
 @RestController
 @RequestMapping("/candidate")
 public class CandidateController {
-	
+
 	@Autowired
 	private ResumeService resService;
-	
+
 	@Value("${file.upload-dir}")
-    private String uploadDir;
-	
+	private String uploadDir;
+
 	@Autowired
 	private JobService jobService;
-	
+
 	@PostMapping("/uploadresume")
-	public ResponseEntity<ApiResponse> uploadResume(@RequestParam("file") MultipartFile file){
-		try {
-			Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-			if (auth != null && auth.getPrincipal() instanceof User user) {
-	            String filename = StringUtils.cleanPath(user.getUserId()+file.getOriginalFilename().substring(file.getOriginalFilename().indexOf('.')));
-	
-	            Path uploadPath = Paths.get(uploadDir);
-	            if (!Files.exists(uploadPath)) {
-	                Files.createDirectories(uploadPath);
-	            }
-	
-	            Path filePath = uploadPath.resolve(filename);
-	            Files.copy(file.getInputStream(), filePath, StandardCopyOption.REPLACE_EXISTING);
-	            Resume res = resService.uploadResume(filePath.toString() , file);
-	            if(res!=null) {
-	            	jobService.match(user);
-	            	return ResponseEntity.ok(new ApiResponse(true, res, "Resume uploaded successfully!!"));
-	            }
-	            
+	public ResponseEntity<ApiResponse> uploadResume(@RequestParam("file") MultipartFile file) throws Exception {
+		Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+		if (auth != null && auth.getPrincipal() instanceof User user) {
+			String filename = StringUtils.cleanPath(
+					user.getUserId() + file.getOriginalFilename().substring(file.getOriginalFilename().indexOf('.')));
+
+			Path uploadPath = Paths.get(uploadDir);
+			if (!Files.exists(uploadPath)) {
+				Files.createDirectories(uploadPath);
 			}
-			return ResponseEntity.status(HttpStatus.NOT_MODIFIED).body(new ApiResponse(false , null , "Resume not uploaded"));
-        } catch (IOException e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(null);
-        }
-	}
-	
-	@GetMapping("/apply/job/{jobId}")
-	public ResponseEntity<ApiResponse> applyJob(@PathVariable String jobId){
-		JobApplication jobApp=null;
-		try {
-			jobApp = jobService.applyJob(jobId);
-		} catch (MessagingException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+
+			Path filePath = uploadPath.resolve(filename);
+			Files.copy(file.getInputStream(), filePath, StandardCopyOption.REPLACE_EXISTING);
+			Resume res = resService.uploadResume(filePath.toString(), file);
+			if (res != null) {
+				jobService.match(user);
+				return ResponseEntity.ok(new ApiResponse(true, res, "Resume uploaded successfully!!"));
+			}
+
 		}
-		if(jobApp!=null) {
+		return ResponseEntity.status(HttpStatus.NOT_MODIFIED).body(new ApiResponse(false, null, "Resume not uploaded"));
+	}
+
+	@GetMapping("/apply/job/{jobId}")
+	public ResponseEntity<ApiResponse> applyJob(@PathVariable String jobId) throws MessagingException {
+		JobApplication jobApp = null;
+
+		jobApp = jobService.applyJob(jobId);
+		if (jobApp != null) {
 			return ResponseEntity.ok(new ApiResponse(true, jobApp, "Your Application is successfully added"));
 		}
-		return ResponseEntity.status(HttpStatus.FORBIDDEN).body(new ApiResponse(false, null, "Your Application is not saved"));
+		return ResponseEntity.status(HttpStatus.FORBIDDEN)
+				.body(new ApiResponse(false, null, "Your Application is not saved"));
 	}
-	
+
 	@GetMapping("/get/job")
-	public ResponseEntity<ApiResponse> getJobByMatch(){
-		
+	public ResponseEntity<ApiResponse> getJobByMatch() {
+
 		List<Job> jobs = jobService.getJobByMatch();
-		if(jobs!=null) {
+		if (jobs != null) {
 			return ResponseEntity.ok(new ApiResponse(true, jobs, "Matched Job"));
 		}
-		
+
 		return ResponseEntity.ok(new ApiResponse(true, jobService.getAllJob(), "All Jobs"));
 	}
 }

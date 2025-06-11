@@ -19,6 +19,7 @@ import com.resumeradar.model.ApiResponse;
 import com.resumeradar.model.RegisterModel;
 import com.resumeradar.service.UserService;
 
+import jakarta.mail.MessagingException;
 import jakarta.validation.Valid;
 
 
@@ -66,7 +67,7 @@ public class AdminController {
 	}
 	
 	@PostMapping("/add/admin")
-	public ResponseEntity<ApiResponse> addAdmin(@Valid @RequestBody RegisterModel model){
+	public ResponseEntity<ApiResponse> addAdmin(@Valid @RequestBody RegisterModel model) throws MessagingException{
 		model.setPassword(passEncoder.encode(model.getPassword()));
 		User user = userService.saveUser(model);
 		if(user!=null) {

@@ -2,7 +2,6 @@ package com.resumeradar.service;
 
 import java.util.Arrays;
 import java.util.List;
-import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -21,6 +20,7 @@ import com.resumeradar.entity.JobApplication;
 import com.resumeradar.entity.JobMatch;
 import com.resumeradar.entity.Role;
 import com.resumeradar.entity.User;
+import com.resumeradar.exception.UnauthorizedUserException;
 import com.resumeradar.model.JobRegModel;
 import com.resumeradar.repo.JobAppRepo;
 import com.resumeradar.repo.JobMatchRepo;
@@ -28,6 +28,7 @@ import com.resumeradar.repo.JobRepo;
 import com.resumeradar.utils.EmailMessage;
 
 import jakarta.mail.MessagingException;
+import jakarta.persistence.EntityNotFoundException;
 
 @Service
 public class JobService {
@@ -55,15 +56,17 @@ public class JobService {
 			match(job);
 			return job;
 		}
-		return null;
+		else {
+			throw new UnauthorizedUserException("User is not authenticated or invalid");
+		}
 	}
 
 
-	public Job getJobById(String jobId) throws NoSuchElementException {
+	public Job getJobById(String jobId){
 		Optional<Job> job = jobRepo.findById(jobId);
 		if(job.isPresent())
 			return job.get();
-		return null;
+		throw new EntityNotFoundException("Job is not Found");
 	}
 	
 	public JobApplication applyJob(String jobId) throws MessagingException {
@@ -75,9 +78,13 @@ public class JobService {
 				jobAppRepo.save(jobApp);
 				emailMessage.sendJobApplicationConfirmation(user.getEmail(), user.getName(), job.getTitle(), job.getCompany());
 				return jobApp;
+			}else {
+				throw new EntityNotFoundException("Job is not Found");
 			}
 		}
-		return null;
+		else {
+			throw new UnauthorizedUserException("User is not authenticated or invalid");
+		}
 	}
 
 	public void match(User user) {
@@ -135,7 +142,9 @@ public class JobService {
 	                  .map(JobMatch::getJob)
 	                  .collect(Collectors.toList());
 		}
-		return null;
+		else {
+			throw new UnauthorizedUserException("User is not authenticated or invalid");
+		}
 	}
 
 
@@ -149,7 +158,7 @@ public class JobService {
 		if(op.isPresent()) {
 			return op.get();
 		}
-		return null;
+		throw new EntityNotFoundException("Job is not Found");
 	}
 
 

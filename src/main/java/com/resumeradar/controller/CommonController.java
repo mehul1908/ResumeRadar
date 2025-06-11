@@ -49,7 +49,7 @@ public class CommonController {
 	}
 	
 	@PostMapping("/updatepassword")
-	public ResponseEntity<ApiResponse> updatePassword( @Valid @RequestBody PasswordUpdateRequest model ){
+	public ResponseEntity<ApiResponse> updatePassword( @Valid @RequestBody PasswordUpdateRequest model ) throws MessagingException{
 		
 		Authentication auth = SecurityContextHolder.getContext().getAuthentication();
 		if (auth != null && auth.getPrincipal() instanceof User user) {
@@ -105,7 +105,4 @@ public class CommonController {
 		}
 		return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(new ApiResponse(false, user, "User not authorized."));
 	}
-	
-	
-	
 }

@@ -15,12 +15,15 @@ import org.springframework.stereotype.Service;
 
 import com.resumeradar.entity.Role;
 import com.resumeradar.entity.User;
+import com.resumeradar.exception.UnauthorizedUserException;
 import com.resumeradar.model.LoginModel;
 import com.resumeradar.model.RegisterModel;
 import com.resumeradar.model.UpdateUserModel;
 import com.resumeradar.repo.UserRepo;
 import com.resumeradar.utils.EmailMessage;
 
+import jakarta.mail.MessagingException;
+import jakarta.persistence.EntityNotFoundException;
 import jakarta.validation.Valid;
 
 
@@ -39,7 +42,9 @@ public class UserService implements UserDetailsService{
 	@Override
 	public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
 		// TODO Auto-generated method stub
-		return null;
+		Optional<User> op = uRepo.findById(username);
+		if(op.isPresent()) return op.get();
+		throw new UsernameNotFoundException("User not found");
 	}
 
 	public Optional<User> getUserById(String userid) {
@@ -47,49 +52,29 @@ public class UserService implements UserDetailsService{
 	}
 
 	public User login(LoginModel model) {
-		try {
 			Optional<User> op = uRepo.findByEmailAndIsActive(model.getEmailId() , true);
 			if(op.isPresent()) return op.get();
-			return null;
-		}
-		catch(Exception e) {
-			return null;
-		}
+			throw new EntityNotFoundException("User Not Found");
 	}
 
-	public User saveUser(@Valid RegisterModel model) {
-		try {
+	public User saveUser(@Valid RegisterModel model) throws MessagingException {
 			User user = new User(model.getName(), model.getEmailId(), model.getPassword(),
 					model.getRole() , model.getEducation() , model.getPhone());
 			uRepo.save(user);
 			emailMessage.sendRegistrationEmail(user.getEmail(), user.getName());
 			return user;
-		}catch(Exception e) {
-			e.printStackTrace();
-			return null;
-		}
 	}
 
 	public List<User> getUserByRole(String role) {
-		// TODO Auto-generated method stub
-		try {
-			return uRepo.findByRole(Role.valueOf(role));
-		}catch(Exception e) {
-			e.printStackTrace();
-			return null;
-		}
+		return uRepo.findByRole(Role.valueOf(role));
 	}
 
-	public User updatePassword(User user, String encodedPass) {
-		try {
+	public User updatePassword(User user, String encodedPass) throws MessagingException {
 			user.setPassword(encodedPass);
 			uRepo.save(user);
 			emailMessage.sendPasswordUpdateConfirmation(user.getEmail(), user.getName());
 			return user;
-		}catch(Exception e) {
-			e.printStackTrace();
-			return null;
-		}
+		
 	}
 
 	public User deactivate(User user) {
@@ -110,7 +95,9 @@ public class UserService implements UserDetailsService{
 			uRepo.save(user);
 			return user;
 		}
-		return null;
+		else {
+			throw new UnauthorizedUserException("User is unauthentical or not valid");
+		}
 	}
 
 	public User activate(User user) {
@@ -134,8 +121,9 @@ public class UserService implements UserDetailsService{
 			uRepo.save(user);
 			
 			return user;
+		}else {
+			throw new UnauthorizedUserException("User is unauthentical or not valid");
 		}
-		return null;
 	}
 
 	

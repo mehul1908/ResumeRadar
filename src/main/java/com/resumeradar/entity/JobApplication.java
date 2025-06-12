@@ -4,6 +4,7 @@ import java.time.LocalDateTime;
 
 import org.hibernate.annotations.CreationTimestamp;
 
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
@@ -33,18 +34,19 @@ public class JobApplication {
     private String applicationId;	
 
     @ManyToOne
-    @JoinColumn(name = "job_id")
+    @JoinColumn(name = "job_id" , nullable = false)
     private Job job;
 
     @ManyToOne
-    @JoinColumn(name = "seeker_id")
+    @JoinColumn(name = "seeker_id" , nullable=false)
     private User seeker;
 
     @ManyToOne
-    @JoinColumn(name = "resume_id")
+    @JoinColumn(name = "resume_id" , nullable=false)
     private Resume resume;
 
     @Enumerated(EnumType.STRING)
+    @Column(name="status" , nullable=false)
     private ApplicationStatus status;
 
     @CreationTimestamp

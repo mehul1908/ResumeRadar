@@ -11,6 +11,7 @@ import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.text.PDFTextStripper;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
@@ -22,6 +23,8 @@ import com.resumeradar.exception.UnauthorizedUserException;
 import com.resumeradar.repo.ResumeRepo;
 import com.resumeradar.repo.UserRepo;
 import com.resumeradar.utils.SkillSet;
+
+import jakarta.transaction.Transactional;
 
 @Service
 public class ResumeService {
@@ -35,7 +38,7 @@ public class ResumeService {
 	private static final LevenshteinDistance distance = LevenshteinDistance.getDefaultInstance();
 
 	public static Set<String> matchSkills(String text) {
-		Set<String> knownSkills = SkillSet.getList(); // Your skills
+		Set<String> knownSkills = SkillSet.getSkillSet(); // Your skills
 		Set<String> matchedSkills = new HashSet<>();
 		String normalizedText = text.toLowerCase();
 
@@ -80,6 +83,8 @@ public class ResumeService {
 		return word;
 	}
 
+	@Transactional
+	@PreAuthorize("hasRole('JOB_SEEKER')")
 	public Resume uploadResume(String resumePath, MultipartFile file) throws Exception {
 		Authentication auth = SecurityContextHolder.getContext().getAuthentication();
 		if (auth != null && auth.getPrincipal() instanceof User user) {

@@ -10,6 +10,7 @@ import org.hibernate.LazyInitializationException;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
@@ -29,6 +30,7 @@ import com.resumeradar.utils.EmailMessage;
 
 import jakarta.mail.MessagingException;
 import jakarta.persistence.EntityNotFoundException;
+import jakarta.transaction.Transactional;
 
 @Service
 public class JobService {
@@ -48,6 +50,8 @@ public class JobService {
 	@Autowired
 	private EmailMessage emailMessage;
 	
+	@Transactional
+	@PreAuthorize("hasRole('RECRUITER')")
 	public Job addJob(JobRegModel model) throws NullPointerException , DataIntegrityViolationException , IllegalArgumentException , LazyInitializationException {
 		Authentication auth = SecurityContextHolder.getContext().getAuthentication();
 		if (auth != null && auth.getPrincipal() instanceof User user) {
@@ -62,6 +66,8 @@ public class JobService {
 	}
 
 
+	@Transactional
+	@PreAuthorize("authenticated()")
 	public Job getJobById(String jobId){
 		Optional<Job> job = jobRepo.findById(jobId);
 		if(job.isPresent())
@@ -69,10 +75,12 @@ public class JobService {
 		throw new EntityNotFoundException("Job is not Found");
 	}
 	
+	@Transactional
+	@PreAuthorize("hasRole('JOB_SEEKER')")
 	public JobApplication applyJob(String jobId) throws MessagingException {
 		Authentication auth = SecurityContextHolder.getContext().getAuthentication();
 		if (auth != null && auth.getPrincipal() instanceof User user) {
-			Job job = getJobById(jobId);
+			Job job = getJobByIdAndIsActive(jobId , true);
 			if(job!=null) {
 				JobApplication jobApp = new JobApplication(job, user, user.getResumes());
 				jobAppRepo.save(jobApp);
@@ -87,12 +95,19 @@ public class JobService {
 		}
 	}
 
+	
+	private Job getJobByIdAndIsActive(String jobId, boolean b) {
+		Optional<Job> op = jobRepo.findByJobIdAndIsActive(jobId , b);
+		if(op.isPresent()) return op.get();
+		return null;
+	}
+
+
 	public void match(User user) {
 		List<Job> jobs = jobRepo.findByIsActive(true);
 		for(Job job : jobs) {
 			matchJobAndUser(job , user);
 		}
-		
 	}
 	
 	private void match(Job job) {
@@ -103,6 +118,7 @@ public class JobService {
 		
 	}
 
+	@Transactional
 	private void matchJobAndUser(Job job, User user) {
 		
 		Set<String> requiredSkillSet = Arrays.stream(job.getRequiredSkills().split(","))
@@ -162,21 +178,40 @@ public class JobService {
 	}
 
 
+	@Transactional
+	@PreAuthorize("hasRole('RECRUITER')")
 	public void updateJobApp(JobApplication jobApp, ApplicationStatus appStatus) throws MessagingException {
-		
+		if(isUserRelatedToJob(jobApp.getJob())) {
 			jobApp.setStatus(appStatus);
 			jobAppRepo.save(jobApp);
 			emailMessage.sendJobInProcessNotification(jobApp.getSeeker().getEmail(), jobApp.getSeeker().getName(), jobApp.getJob().getTitle(), jobApp.getJob().getCompany());
+		}else {
+			throw new UnauthorizedUserException("User is not authenticated or invalid");
+		}
 		
 		
 	}
 
 
+	@PreAuthorize("hasRole('RECRUITER')")
 	public List<User> getCandidateByJobApp(Job job) {
-		List<JobApplication> apps = jobAppRepo.findByJob(job);
-		return apps.stream()
-                  .map(JobApplication::getSeeker)
-                  .collect(Collectors.toList());
+		if(isUserRelatedToJob(job)) {
+			List<JobApplication> apps = jobAppRepo.findByJob(job);
+			return apps.stream()
+	                  .map(JobApplication::getSeeker)
+	                  .collect(Collectors.toList());
+		}
+		throw new UnauthorizedUserException("User is not authenticated or invalid");
+	}
+	
+	public boolean isUserRelatedToJob(Job job) {
+		Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+		if (auth != null && auth.getPrincipal() instanceof User user) {
+			if(user.getRole().name().equals("ROLE_RECRUITER") && job.getRecruiter().equals(user)) {
+				return true;
+			}
+		}
+		return false;
 	}
 	
 

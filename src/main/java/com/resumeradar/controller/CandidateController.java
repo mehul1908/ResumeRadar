@@ -4,6 +4,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
+
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -31,6 +32,9 @@ import com.resumeradar.service.ResumeService;
 
 import jakarta.mail.MessagingException;
 
+import lombok.extern.slf4j.Slf4j;
+
+@Slf4j
 @RestController
 @RequestMapping("/candidate")
 public class CandidateController {
@@ -47,36 +51,49 @@ public class CandidateController {
 	@PostMapping("/uploadresume")
 	public ResponseEntity<ApiResponse> uploadResume(@RequestParam("file") MultipartFile file) throws Exception {
 		Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-		if (auth != null && auth.getPrincipal() instanceof User user) {
-			String filename = StringUtils.cleanPath(
-					user.getUserId() + file.getOriginalFilename().substring(file.getOriginalFilename().indexOf('.')));
 
-			Path uploadPath = Paths.get(uploadDir);
-			if (!Files.exists(uploadPath)) {
-				Files.createDirectories(uploadPath);
-			}
-
-			Path filePath = uploadPath.resolve(filename);
-			Files.copy(file.getInputStream(), filePath, StandardCopyOption.REPLACE_EXISTING);
-			Resume res = resService.uploadResume(filePath.toString(), file);
-			if (res != null) {
-				jobService.match(user);
-				return ResponseEntity.ok(new ApiResponse(true, res, "Resume uploaded successfully!!"));
-			}
-
+		if (auth == null || !(auth.getPrincipal() instanceof User user)) {
+			log.warn("User is unauthorized");
+			return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+				.body(new ApiResponse(false, null, "Unauthorized access"));
 		}
-		return ResponseEntity.status(HttpStatus.NOT_MODIFIED).body(new ApiResponse(false, null, "Resume not uploaded"));
+
+		String filename = StringUtils.cleanPath(
+			user.getUserId() + file.getOriginalFilename().substring(file.getOriginalFilename().indexOf('.'))
+		);
+
+		Path uploadPath = Paths.get(uploadDir);
+		if (!Files.exists(uploadPath)) {
+			Files.createDirectories(uploadPath);
+		}
+
+		Path filePath = uploadPath.resolve(filename);
+		Files.copy(file.getInputStream(), filePath, StandardCopyOption.REPLACE_EXISTING);
+
+		Resume res = resService.uploadResume(filePath.toString(), file);
+		if (res != null) {
+			jobService.match(user);
+			log.info("Resume uploaded successfully");
+			return ResponseEntity.status(HttpStatus.CREATED)
+				.body(new ApiResponse(true, res, "Resume uploaded successfully!!"));
+		}
+		log.warn("User is not uploaded");
+		return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+			.body(new ApiResponse(false, null, "Resume not uploaded"));
 	}
 
-	@GetMapping("/apply/job/{jobId}")
+
+	@PostMapping("/apply/job/{jobId}")
 	public ResponseEntity<ApiResponse> applyJob(@PathVariable String jobId) throws MessagingException {
 		JobApplication jobApp = null;
 
 		jobApp = jobService.applyJob(jobId);
 		if (jobApp != null) {
-			return ResponseEntity.ok(new ApiResponse(true, jobApp, "Your Application is successfully added"));
+			log.info("Applied for job is successfully saved.");
+			return ResponseEntity.status(HttpStatus.CREATED).body(new ApiResponse(true, jobApp, "Your Application is successfully added"));
 		}
-		return ResponseEntity.status(HttpStatus.FORBIDDEN)
+		log.warn("Your Application is not saved");
+		return ResponseEntity.status(HttpStatus.CONFLICT)
 				.body(new ApiResponse(false, null, "Your Application is not saved"));
 	}
 
@@ -85,9 +102,10 @@ public class CandidateController {
 
 		List<Job> jobs = jobService.getJobByMatch();
 		if (jobs != null) {
+			log.info("Job is matched with user is returned");
 			return ResponseEntity.ok(new ApiResponse(true, jobs, "Matched Job"));
 		}
-
+		log.warn("No job is matched");
 		return ResponseEntity.ok(new ApiResponse(true, jobService.getAllJob(), "All Jobs"));
 	}
 }

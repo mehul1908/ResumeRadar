@@ -22,7 +22,9 @@ import com.resumeradar.service.JobService;
 
 import jakarta.mail.MessagingException;
 import jakarta.validation.Valid;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 @RestController
 @RequestMapping("/recruiter")
 public class RecruiterController {
@@ -34,23 +36,36 @@ public class RecruiterController {
 	public ResponseEntity<ApiResponse> uploadJob(@Valid @RequestBody JobRegModel model){
 		Job job = jobService.addJob(model);
 		if(job!=null) {
-			return ResponseEntity.ok(new ApiResponse(true, job, "Job is added successfully!!"));
+			log.info("Job is created");
+			return ResponseEntity.status(HttpStatus.CREATED).body(new ApiResponse(true, job, "Job is added successfully!!"));
 		}
-		return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(new ApiResponse(false, null, "Job is not  added"));
+		log.warn("Job can not able to create");
+		return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new ApiResponse(false, null, "Job is not  added"));
 	}
 	
 	
 	@PostMapping("/process/job/{applicantId}")
-	public ResponseEntity<ApiResponse> processApplication(@PathVariable String applicantId , @RequestBody ApplicationStatus appStatus ) throws MessagingException{
-		JobApplication jobApp = jobService.getJobAppById(applicantId);
-		
-		if(jobApp!=null) {
-			jobService.updateJobApp(jobApp , appStatus);
-			return ResponseEntity.ok(new ApiResponse(true, jobApp, "Status Changed"));
-		}
-		
-		return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new ApiResponse(false, null, "No Job Application Found!!"));
+	public ResponseEntity<ApiResponse> processApplication(@PathVariable String applicantId,@RequestBody ApplicationStatus appStatus) throws MessagingException {
+
+	    JobApplication jobApp = jobService.getJobAppById(applicantId);
+
+	    if (jobApp == null) {
+	    	log.warn("No Job Application Found");
+	        return ResponseEntity.status(HttpStatus.NOT_FOUND)
+	            .body(new ApiResponse(false, null, "No Job Application Found!!"));
+	    }
+
+	    if (appStatus == null) {
+	    	log.warn("Application status is missing");
+	        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+	            .body(new ApiResponse(false, null, "Application status is missing"));
+	    }
+
+	    jobService.updateJobApp(jobApp, appStatus);
+	    log.info("Job Application's Status updated");
+	    return ResponseEntity.ok(new ApiResponse(true, jobApp, "Status Changed"));
 	}
+
 	
 	@GetMapping("/get/user/application/{jobId}")
 	public ResponseEntity<ApiResponse> getJobAppByJobId(@PathVariable String jobId){

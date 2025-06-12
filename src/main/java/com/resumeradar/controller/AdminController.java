@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -21,8 +22,9 @@ import com.resumeradar.service.UserService;
 
 import jakarta.mail.MessagingException;
 import jakarta.validation.Valid;
+import lombok.extern.slf4j.Slf4j;
 
-
+@Slf4j
 @RestController
 @RequestMapping("/admin")
 public class AdminController {
@@ -34,24 +36,15 @@ public class AdminController {
 	private PasswordEncoder passEncoder;
 	
 	@GetMapping("/get/role/{role}")
+	@Cacheable(value = "usersByRole", key = "#role")
 	public ResponseEntity<ApiResponse> getUserByRole(@PathVariable String role){
+		log.info("Get user by role : {}" , role);
 		List<User> users = userService.getUserByRole(role);
 		if (users==null) {
-			return ResponseEntity.ok(new ApiResponse(false, null, "Role is not found"));
+			return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new ApiResponse(false, null, "Role is not found or has no User"));
 		}
-		return ResponseEntity.ok(new ApiResponse(true, users, "Data Send"));
-	}
-	
-	@GetMapping("/deactivate/{id}")
-	public ResponseEntity<ApiResponse>  deactivate(@PathVariable String id){
-		Optional<User> op = userService.getUserById(id);
-		if (op.isPresent()) {
-			User updatedUser = userService.deactivate(op.get());
-			return ResponseEntity.ok(new ApiResponse(true , updatedUser , "User deactivated"));
-		}
-		else {
-			return ResponseEntity.status(HttpStatus.NOT_MODIFIED).body(new ApiResponse(false, null, "User not found"));
-		}
+		log.info("List of user received");
+		return ResponseEntity.ok(new ApiResponse(true, users, "List of User send"));
 	}
 	
 	@GetMapping("/activate/{id}")
@@ -59,10 +52,12 @@ public class AdminController {
 		Optional<User> op = userService.getUserById(id);
 		if (op.isPresent()) {
 			User updatedUser = userService.activate(op.get());
+			log.info("User {} is Activated."  , id);
 			return ResponseEntity.ok(new ApiResponse(true , updatedUser , "User activated"));
 		}
 		else {
-			return ResponseEntity.status(HttpStatus.NOT_MODIFIED).body(new ApiResponse(false, null, "User not found"));
+			log.warn("User {} is not found" , id);
+			return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new ApiResponse(false, null, "User not found"));
 		}
 	}
 	
@@ -71,10 +66,12 @@ public class AdminController {
 		model.setPassword(passEncoder.encode(model.getPassword()));
 		User user = userService.saveUser(model);
 		if(user!=null) {
-			return ResponseEntity.ok(new ApiResponse(true, user, "User Added Successfully"));
+			log.info("New admin is created");
+			return ResponseEntity.status(HttpStatus.CREATED).body(new ApiResponse(true, user, "User Added Successfully"));
 		}
 		else {
-			return ResponseEntity.ok(new ApiResponse(false , null , "User is not able to add"));
+			log.warn("There is error is creating the new admin");
+			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new ApiResponse(false , null , "User is not able to add"));
 		}
 	}
 	

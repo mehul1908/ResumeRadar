@@ -20,4 +20,6 @@ public interface UserRepo extends JpaRepository<User, String>{
 
 	List<User> findByIsActiveAndRole(boolean b, Role role);
 
+	Optional<User> findByEmail(String email);
+
 }

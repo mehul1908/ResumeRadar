@@ -22,10 +22,15 @@ import com.resumeradar.model.UpdateUserModel;
 import com.resumeradar.service.UserService;
 import com.resumeradar.utils.EmailMessage;
 import com.resumeradar.utils.RandomPasswordGenerator;
+import com.resumeradar.utils.TokenBlacklistService;
 
 import jakarta.mail.MessagingException;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 
+import lombok.extern.slf4j.Slf4j;
+
+@Slf4j
 @RestController
 @RequestMapping("/user")
 public class CommonController {
@@ -38,44 +43,61 @@ public class CommonController {
 	
 	@Autowired
 	private EmailMessage emailMessage;
-	
+
+	@Autowired
+    private TokenBlacklistService tokenBlacklistService;
+
 	@GetMapping("/get/{userId}")
 	public ResponseEntity<ApiResponse> getUserById(@PathVariable String userId){
 		Optional<User> op = userService.getUserById(userId);	
 		if(op.isPresent()) {
+			log.info("User is get with id {}" , userId);
 			return ResponseEntity.ok(new ApiResponse(true, op.get(), "User Found"));
 		}
-		return ResponseEntity.ok(new ApiResponse(false, op.get(), "User not found"));
+		log.warn("No user is found with id {}" , userId);
+		return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new ApiResponse(false, op.get(), "User not found"));
 	}
 	
 	@PostMapping("/updatepassword")
-	public ResponseEntity<ApiResponse> updatePassword( @Valid @RequestBody PasswordUpdateRequest model ) throws MessagingException{
-		
+	public ResponseEntity<ApiResponse> updatePassword(@Valid @RequestBody PasswordUpdateRequest model) throws MessagingException {
 		Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-		if (auth != null && auth.getPrincipal() instanceof User user) {
-			if(passEncoder.matches(model.getOldPassword(), user.getPassword())) {
-				String encodedPass = passEncoder.encode(model.getNewPassword());
-				User userUpdated = userService.updatePassword(user , encodedPass);
-				if(user!=null) {
-					return ResponseEntity.ok(new ApiResponse(true , userUpdated , "Password Updated"));
-				}
-			}else {
-				return ResponseEntity.ok(new ApiResponse(false , null , "Password doesn't match"));
-			}
+
+		if (auth == null || !(auth.getPrincipal() instanceof User user)) {
+			log.warn("Unauthorized Access");
+			return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+				.body(new ApiResponse(false, null, "Unauthorized access"));
 		}
-		return ResponseEntity.ok(new ApiResponse(false , null , "Password Cann't beUpdated"));
-		
+
+		if (!passEncoder.matches(model.getOldPassword(), user.getPassword())) {
+			log.warn("Old password doesn't match");
+			return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+				.body(new ApiResponse(false, null, "Old password doesn't match"));
+		}
+
+		String encodedPass = passEncoder.encode(model.getNewPassword());
+		User userUpdated = userService.updatePassword(user, encodedPass);
+
+		if (userUpdated != null) {
+			log.info("Password updated");
+			return ResponseEntity.ok(new ApiResponse(true, userUpdated, "Password updated successfully"));
+		}
+		log.warn("Password could not be updated");
+		return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+			.body(new ApiResponse(false, null, "Password could not be updated"));
 	}
+
 	
 	@GetMapping("/deactivate")
 	public ResponseEntity<ApiResponse>  deactivateYourself(){
 		Authentication auth = SecurityContextHolder.getContext().getAuthentication();
 		if (auth != null && auth.getPrincipal() instanceof User user) {
 			User updatedUser = userService.deactivate(user);
+			log.info("User is deactivated");
 			return ResponseEntity.ok(new ApiResponse(true , updatedUser , "User deactivated"));
 		}
 		else {
-			return ResponseEntity.status(HttpStatus.FORBIDDEN).body(new ApiResponse(false, null, "Login Again"));
+			log.warn("User is not able to deactivate");
+			return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(new ApiResponse(false, null, "Login Again"));
 		}
 	}
 	
@@ -83,26 +105,49 @@ public class CommonController {
 	public ResponseEntity<ApiResponse> updateUser(@RequestBody UpdateUserModel model) {
 		User user = userService.updateUser(model);
 		if(user!=null) {
+			log.info("User is pdated successfully");
 			return ResponseEntity.ok(new ApiResponse(true, user, "User is updated successfully!!"));
 		}
+		log.warn("User is not updated");
 		return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(new ApiResponse(false, null, "User is updated!!"));
 		
 	}
 	
-	@GetMapping("/forgetpassword")
-	public ResponseEntity<ApiResponse> forgetPassword(){
+	@PostMapping("/forgetpassword")
+	public ResponseEntity<ApiResponse> forgetPassword() {
 		String rawPassword = RandomPasswordGenerator.generateStrongPassword();
 		String randomPassword = passEncoder.encode(rawPassword);
+
 		User user = userService.forgetPassword(randomPassword);
-		if(user!=null) {
+
+		if (user != null) {
 			try {
 				emailMessage.sendPasswordResetEmail(user.getEmail(), user.getName(), rawPassword);
+				log.info("Password is updated");
+				return ResponseEntity.ok(new ApiResponse(true, null, "Password reset and email sent successfully"));
 			} catch (MessagingException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
+		
+				log.warn(e.getMessage());
+				return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+					.body(new ApiResponse(false, null, "Password reset but failed to send email"));
 			}
-			return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
 		}
-		return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(new ApiResponse(false, user, "User not authorized."));
+		log.warn("User not authorized");
+		return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+			.body(new ApiResponse(false, null, "User not authorized."));
 	}
+
+	
+    @PostMapping("/logout")
+    public ResponseEntity<ApiResponse> logout(HttpServletRequest request) {
+        final String authHeader = request.getHeader("Authorization");
+        if (authHeader != null && authHeader.startsWith("Bearer ")) {
+            String token = authHeader.substring(7);
+            tokenBlacklistService.blacklistToken(token);
+            log.info("Token is added to Black List");
+            return ResponseEntity.ok(new ApiResponse(true, null, "Logged out successfully"));
+        }
+        log.warn("Token not found");
+        return ResponseEntity.badRequest().body(new ApiResponse(false, null, "Token not found"));
+    }
 }

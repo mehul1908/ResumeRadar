@@ -4,6 +4,7 @@ import java.time.LocalDateTime;
 
 import org.hibernate.annotations.CreationTimestamp;
 
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -31,13 +32,14 @@ public class JobMatch {
     private String matchId;
 
     @ManyToOne
-    @JoinColumn(name = "seeker_id")
+    @JoinColumn(name = "seeker_id" , nullable=false)
     private User seeker;
 
     @ManyToOne
-    @JoinColumn(name = "job_id")
+    @JoinColumn(name = "job_id" , nullable=false)
     private Job job;
 
+    @Column(name="match_score" , nullable=false)
     private Double matchScore;
 
     @CreationTimestamp

@@ -6,6 +6,7 @@ import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -24,6 +25,7 @@ import com.resumeradar.utils.EmailMessage;
 
 import jakarta.mail.MessagingException;
 import jakarta.persistence.EntityNotFoundException;
+import jakarta.transaction.Transactional;
 import jakarta.validation.Valid;
 
 
@@ -57,6 +59,7 @@ public class UserService implements UserDetailsService{
 			throw new EntityNotFoundException("User Not Found");
 	}
 
+	@Transactional
 	public User saveUser(@Valid RegisterModel model) throws MessagingException {
 			User user = new User(model.getName(), model.getEmailId(), model.getPassword(),
 					model.getRole() , model.getEducation() , model.getPhone());
@@ -65,10 +68,12 @@ public class UserService implements UserDetailsService{
 			return user;
 	}
 
+	@PreAuthorize("hasRole('ADMIN')")
 	public List<User> getUserByRole(String role) {
 		return uRepo.findByRole(Role.valueOf(role));
 	}
 
+	@Transactional
 	public User updatePassword(User user, String encodedPass) throws MessagingException {
 			user.setPassword(encodedPass);
 			uRepo.save(user);
@@ -77,12 +82,14 @@ public class UserService implements UserDetailsService{
 		
 	}
 
+	@Transactional
 	public User deactivate(User user) {
 		user.setIsActive(false);
 		uRepo.save(user);
 		return user;
 	}
 
+	@Transactional
 	public User updateUser(UpdateUserModel model) {
 		Authentication auth = SecurityContextHolder.getContext().getAuthentication();
 		if (auth != null && auth.getPrincipal() instanceof User user) {
@@ -100,6 +107,7 @@ public class UserService implements UserDetailsService{
 		}
 	}
 
+	@Transactional
 	public User activate(User user) {
 		user.setIsActive(true);
 		uRepo.save(user);
@@ -110,10 +118,12 @@ public class UserService implements UserDetailsService{
 		return uRepo.findByIsActive(b);
 	}
 
+	@PreAuthorize("hasRole('ADMIN')")
 	public List<User> findByIsActiveAndRole(boolean b, Role role) {
 		return uRepo.findByIsActiveAndRole(b , role);
 	}
 
+	@Transactional
 	public User forgetPassword(String randomPassword) {
 		Authentication auth = SecurityContextHolder.getContext().getAuthentication();
 		if (auth != null && auth.getPrincipal() instanceof User user) {

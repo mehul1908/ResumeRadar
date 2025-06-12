@@ -12,27 +12,33 @@ import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
 @Configuration
-public class SecurityConfig 
-{
-	@Autowired
-	private JWTFilter jwtFilter;
-	
-	@Bean
-    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception 
-    {
-		http.csrf(csrf->csrf.disable())
-	    .authorizeHttpRequests(auth -> 
-	        auth.requestMatchers("/auth/**","/swagger-ui/**", 
-                    "/v3/api-docs/**", 
-                    "/swagger-ui.html",
-                    "/webjars/**").permitAll()
-	        .requestMatchers("/**").permitAll()
-	        
-	        .anyRequest().permitAll())
-	    .exceptionHandling(ex -> 
-	        ex.accessDeniedPage("/auth/wrongauth"));
-		
-		http.addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
+public class SecurityConfig {
+
+    @Autowired
+    private JWTFilter jwtFilter;
+    
+    @Autowired
+    private OAuth2SuccessHandler oAuth2SuccessHandler;
+
+    @Bean
+    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+        http
+            .csrf(csrf -> csrf.disable())
+            .authorizeHttpRequests(auth -> auth
+                .requestMatchers("/auth/**", "/swagger-ui/**", "/v3/api-docs/**", "/swagger-ui.html", "/webjars/**" , "/login/oauth2/code/google").permitAll()
+                .requestMatchers("/admin/**").hasRole("ADMIN")
+                .requestMatchers("/candidate/**").hasRole("JOB_SEEKER")
+                .requestMatchers("/recuriter/**").hasRole("RECURUITER")
+                .requestMatchers("/user/**").authenticated()
+                .anyRequest().permitAll()
+            )
+            .oauth2Login(oauth -> oauth
+                    .successHandler(oAuth2SuccessHandler)
+            );
+
+        // Add JWT Filter
+        http.addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
+
         return http.build();
     }
 
@@ -46,5 +52,3 @@ public class SecurityConfig
         return new BCryptPasswordEncoder();
     }
 }
-
-

@@ -1,7 +1,7 @@
 package com.resumeradar.controller;
 
-
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -42,11 +42,13 @@ public class WebController {
 			ApiResponse res = new ApiResponse(false, null, "Email Id is Wrong!!");
 			return ResponseEntity.ok(res);
 		}
-		
+		if(user.getPassword()==null) {
+			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new ApiResponse(false, null, "Password is not set"));
+		}
 		boolean flag = passEncoder.matches(model.getPassword(), user.getPassword());
 		if(flag) {
 			String token = jwtUtils.generateToken(user.getUserId());
-			LoginResponse lr = new LoginResponse(user.getName(), user.getRole().name(), token);
+			LoginResponse lr = new LoginResponse(user.getName(), user.getRole(), token);
 			return ResponseEntity.ok(new ApiResponse(true, lr, "User Login Successfully"));
 		}
 		
@@ -64,6 +66,5 @@ public class WebController {
 			return ResponseEntity.ok(new ApiResponse(false , null , "User is not able to add"));
 		}
 	}
-	
-	
+
 }

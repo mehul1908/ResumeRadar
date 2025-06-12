@@ -37,17 +37,21 @@ public class User implements UserDetails {
     @GeneratedValue(strategy = GenerationType.UUID)
     private String userId;
 
+	@Column(name = "name" , nullable=false)
     private String name;
 
 	@Column(unique = true, nullable = false)
     private String email;
 
 	@JsonIgnore
+	@Column(nullable = false)
     private String password;
 
     @Enumerated(EnumType.STRING)
+	@Column(nullable = false)
     private Role role; // Enum: JOB_SEEKER, RECRUITER, ADMIN
 
+	@Column(nullable = false)
     private Boolean isActive = true;
 
     @CreationTimestamp
@@ -60,9 +64,10 @@ public class User implements UserDetails {
     @OneToMany(mappedBy = "recruiter")
     private List<Job> postedJobs;
     
+	@Column(nullable = false)
     private String education; // only for job seeker
     
-    @Column(length = 13)
+    @Column(length = 13 , nullable=false)
     private String phone;
     
     public User(String name, String email, String password, Role role , String education , String phone) {

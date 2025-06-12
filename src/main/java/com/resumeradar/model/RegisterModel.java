@@ -2,7 +2,9 @@ package com.resumeradar.model;
 
 import com.resumeradar.entity.Role;
 
+import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -14,6 +16,7 @@ import lombok.NoArgsConstructor;
 public class RegisterModel {
 	
 	@NotBlank(message = "Email id can not be blank")
+	@Email(message ="Email is not in proper format")
 	private String emailId;
 	
 	@NotBlank(message = "Password Can not be blank")
@@ -23,7 +26,7 @@ public class RegisterModel {
 		)
 	private String password;
 	
-	@NotBlank(message = "Role can not be blank")
+	@NotNull(message = "Role can not be null")
 	private Role role;
 	
 	@NotBlank(message = "Name can not be blank")

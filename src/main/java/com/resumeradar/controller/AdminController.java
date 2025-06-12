@@ -40,7 +40,7 @@ public class AdminController {
 	public ResponseEntity<ApiResponse> getUserByRole(@PathVariable String role){
 		log.info("Get user by role : {}" , role);
 		List<User> users = userService.getUserByRole(role);
-		if (users==null) {
+		if (users==null || users.isEmpty()) {
 			return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new ApiResponse(false, null, "Role is not found or has no User"));
 		}
 		log.info("List of user received");

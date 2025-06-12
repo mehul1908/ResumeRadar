@@ -101,7 +101,7 @@ public class CandidateController {
 	public ResponseEntity<ApiResponse> getJobByMatch() {
 
 		List<Job> jobs = jobService.getJobByMatch();
-		if (jobs != null) {
+		if (jobs != null || !jobs.isEmpty()) {
 			log.info("Job is matched with user is returned");
 			return ResponseEntity.ok(new ApiResponse(true, jobs, "Matched Job"));
 		}

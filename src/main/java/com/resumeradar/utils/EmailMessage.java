@@ -41,15 +41,7 @@ public class EmailMessage {
 
         String htmlContent = templateEngine.process("registration-email", context);
 
-        MimeMessage message = mailSender.createMimeMessage();
-        MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
-
-        helper.setTo(toEmail);
-        helper.setSubject("Welcome to ResumeRadar – Registration Successful!");
-        helper.setText(htmlContent, true); // true = isHtml
-        helper.setFrom(fromEmail);
-
-        mailSender.send(message);
+        sendMail(toEmail , "Welcome to ResumeRadar – Registration Successful!" , htmlContent , fromEmail);
     }
     
     public void sendPasswordResetEmail(String toEmail, String name, String newPassword) throws MessagingException {
@@ -63,16 +55,7 @@ public class EmailMessage {
         // Process the HTML template
         String htmlContent = templateEngine.process("forget-password-email", context);
 
-        // Construct the message
-        MimeMessage message = mailSender.createMimeMessage();
-        MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
-
-        helper.setTo(toEmail);
-        helper.setSubject("Password Reset - ResumeRadar");
-        helper.setText(htmlContent, true);
-        helper.setFrom(fromEmail);
-
-        mailSender.send(message);
+        sendMail(toEmail , "Password Reset - ResumeRadar" , htmlContent , fromEmail);
     }
     
     public void sendPasswordUpdateConfirmation(String toEmail, String name) throws MessagingException {
@@ -86,16 +69,7 @@ public class EmailMessage {
         // Generate HTML from template
         String htmlContent = templateEngine.process("password-updated-email", context);
 
-        // Prepare message
-        MimeMessage message = mailSender.createMimeMessage();
-        MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
-
-        helper.setTo(toEmail);
-        helper.setSubject("Your Password Has Been Updated");
-        helper.setText(htmlContent, true);
-        helper.setFrom("no-reply@resumeradar.com");
-
-        mailSender.send(message);
+        sendMail(toEmail , "Your Password Has Been Updated" , htmlContent , fromEmail);
     }
     
     
@@ -114,15 +88,7 @@ public class EmailMessage {
 
         String htmlContent = templateEngine.process("job-application-success", context);
 
-        MimeMessage message = mailSender.createMimeMessage();
-        MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
-
-        helper.setTo(toEmail);
-        helper.setSubject("Application Submitted – " + jobTitle + " at " + companyName);
-        helper.setText(htmlContent, true);
-        helper.setFrom("no-reply@resumeradar.com");
-
-        mailSender.send(message);
+        sendMail(toEmail , "Application Submitted – " + jobTitle + " at " + companyName , htmlContent , fromEmail);
     }
     
     public void sendJobInProcessNotification(
@@ -140,13 +106,18 @@ public class EmailMessage {
 
         String htmlContent = templateEngine.process("job-in-process-email", context);
 
-        MimeMessage message = mailSender.createMimeMessage();
+        sendMail(toEmail , "Your Application is Under Review – " + jobTitle , htmlContent , fromEmail);
+        
+    }
+    
+    private void sendMail(String toEmail , String subject , String htmlContent , String fromEmail) throws MessagingException {
+    	MimeMessage message = mailSender.createMimeMessage();
         MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
 
         helper.setTo(toEmail);
-        helper.setSubject("Your Application is Under Review – " + jobTitle);
+        helper.setSubject(subject);
         helper.setText(htmlContent, true);
-        helper.setFrom("no-reply@resumeradar.com");
+        helper.setFrom(fromEmail);
 
         mailSender.send(message);
     }

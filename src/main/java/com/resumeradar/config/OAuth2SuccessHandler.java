@@ -44,7 +44,7 @@ public class OAuth2SuccessHandler implements AuthenticationSuccessHandler {
             user = new User();
             user.setEmail(email);
             user.setName(name);
-            user.setRole(Role.valueOf("ROLE_JOB_SEEKER")); // default
+            user.setRole(Role.ROLE_JOB_SEEKER); // default
             user.setIsActive(true);
             user = userRepository.save(user);
         } else {

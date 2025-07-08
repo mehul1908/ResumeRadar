@@ -44,11 +44,11 @@ public class EmailMessage {
         sendMail(toEmail , "Welcome to ResumeRadar – Registration Successful!" , htmlContent , fromEmail);
     }
     
-    public void sendPasswordResetEmail(String toEmail, String name, String newPassword) throws MessagingException {
+    public void sendPasswordResetEmail(String toEmail, String name, Integer otp) throws MessagingException {
         // Thymeleaf context setup
         Context context = new Context();
         context.setVariable("name", name);
-        context.setVariable("password", newPassword);
+        context.setVariable("otp", otp);
         context.setVariable("loginUrl", loginUrl);
         context.setVariable("supportEmail", supportEmail);
 

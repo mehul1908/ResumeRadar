@@ -21,7 +21,7 @@ public class SecurityConfig {
     private OAuth2SuccessHandler oAuth2SuccessHandler;
 
     @Bean
-    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+    SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
             .csrf(csrf -> csrf.disable())
             .authorizeHttpRequests(auth -> auth
@@ -30,7 +30,6 @@ public class SecurityConfig {
                 .requestMatchers("/candidate/**").hasRole("JOB_SEEKER")
                 .requestMatchers("/recuriter/**").hasRole("RECURUITER")
                 .requestMatchers("/user/**").authenticated()
-                .anyRequest().permitAll()
             )
             .oauth2Login(oauth -> oauth
                     .successHandler(oAuth2SuccessHandler)
@@ -43,12 +42,12 @@ public class SecurityConfig {
     }
 
     @Bean
-    public AuthenticationManager authenticationManager(AuthenticationConfiguration configuration) throws Exception {
+    AuthenticationManager authenticationManager(AuthenticationConfiguration configuration) throws Exception {
         return configuration.getAuthenticationManager();
     }
 
     @Bean
-    public PasswordEncoder passwordEncoder() {
+    PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
     }
 }

@@ -17,11 +17,10 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.resumeradar.entity.User;
 import com.resumeradar.model.ApiResponse;
+import com.resumeradar.model.OtpModel;
 import com.resumeradar.model.PasswordUpdateRequest;
 import com.resumeradar.model.UpdateUserModel;
 import com.resumeradar.service.UserService;
-import com.resumeradar.utils.EmailMessage;
-import com.resumeradar.utils.RandomPasswordGenerator;
 import com.resumeradar.utils.TokenBlacklistService;
 
 import jakarta.mail.MessagingException;
@@ -40,9 +39,6 @@ public class CommonController {
 	
 	@Autowired
 	private PasswordEncoder passEncoder;
-	
-	@Autowired
-	private EmailMessage emailMessage;
 
 	@Autowired
     private TokenBlacklistService tokenBlacklistService;
@@ -115,28 +111,27 @@ public class CommonController {
 	
 	@PostMapping("/forgetpassword")
 	public ResponseEntity<ApiResponse> forgetPassword() {
-		String rawPassword = RandomPasswordGenerator.generateStrongPassword();
-		String randomPassword = passEncoder.encode(rawPassword);
-
-		User user = userService.forgetPassword(randomPassword);
-
-		if (user != null) {
 			try {
-				emailMessage.sendPasswordResetEmail(user.getEmail(), user.getName(), rawPassword);
-				log.info("Password is updated");
-				return ResponseEntity.ok(new ApiResponse(true, null, "Password reset and email sent successfully"));
+				userService.forgetPassword();
+				log.info("Otp is send");
+				return ResponseEntity.ok(new ApiResponse(true, null, "otp is sent."));
 			} catch (MessagingException e) {
 		
 				log.warn(e.getMessage());
 				return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
 					.body(new ApiResponse(false, null, "Password reset but failed to send email"));
 			}
-		}
-		log.warn("User not authorized");
-		return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-			.body(new ApiResponse(false, null, "User not authorized."));
 	}
 
+	@PostMapping("/check/otp")
+	public ResponseEntity<ApiResponse> checkOtp(@RequestBody @Valid OtpModel otp){
+		Boolean isValid = userService.verifyOtp(otp);
+		if(isValid) {
+			return ResponseEntity.ok(new ApiResponse(true, null, "Otp is Successfully verified"));
+		}
+		return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(new ApiResponse(false , null , "Otp is not correct"));
+	}
+	
 	
     @PostMapping("/logout")
     public ResponseEntity<ApiResponse> logout(HttpServletRequest request) {
